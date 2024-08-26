@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Enabled Chatbot</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid #ddd;
+        }
+        .header {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 15px;
+            font-size: 1.25em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .header .bot-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+        }
+        .header .bot-icon img {
+            width: 24px;
+            height: 24px;
+        }
+        .chatbox {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .message {
+            padding: 12px;
+            border-radius: 10px;
+            max-width: 80%;
+            width: fit-content;
+            position: relative;
+            animation: fadeIn 0.5s ease-in-out;
+            line-height: 1.4;
+        }
+        .message.bot {
+            background-color: #e9ecef;
+            color: #333;
+            align-self: flex-start;
+            border: 1px solid #ddd;
+        }
+        .message.user {
+            background-color: #007bff;
+            color: #ffffff;
+            align-self: flex-end;
+            border: 1px solid #0056b3;
+        }
+        .message .author {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        .message-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #ffffff;
+            align-items: center;
+        }
+        .message-input textarea {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            resize: none;
+            overflow: hidden;
+            background-color: #f1f1f1;
+            color: #333;
+            height: 40px;
+            transition: height 0.2s;
+        }
+        .message-input button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+            font-size: 1.2em;
+        }
+        .message-input button:hover {
+            background-color: #0056b3;
+        }
+        .message-input button:active {
+            transform: scale(0.95);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <div class="bot-icon">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/ChatGPT_logo.svg" alt="Bot Logo">
+            </div>
+            AI-Enabled Chatbot
+        </div>
+        <div id="chatbox" class="chatbox">
+            <!-- Example message -->
+            <div class="message bot">
+                <span class="author">Kutti Zone:</span> Hello! How can I assist you today?
+            </div>
+        </div>
+        <div class="message-input">
+            <textarea id="userInput" rows="1" placeholder="Send a message..."></textarea>
+            <button onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        async function sendMessage() {
+            const message = document.getElementById('userInput').value;
+            const csrfToken = '{{ csrf_token }}';
+            if (message.trim() === "") return;
+
+            const chatbox = document.getElementById('chatbox');
+            chatbox.innerHTML += `<div class="message user"><span class="author">You:</span> ${message}</div>`;
+            document.getElementById('userInput').value = "";
+
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            try {
+                const response = await fetch('{% url "generate_text" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: new URLSearchParams({
+                        'input_text': message,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.generated_text) {
+                    chatbox.innerHTML += `<div class="message bot"><span class="author">Kutti Zone:</span> ${data.generated_text}</div>`;
+                } else {
+                    throw new Error(data.error || 'No generated text returned.');
+                }
+            } catch (error) {
+                chatbox.innerHTML += `<div class="message bot"><span class="author">Kutti Zone:</span> Error: ${error.message}</div>`;
+            }
+
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        document.getElementById('userInput').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevents new line in textarea
+                sendMessage();
+            }
+        });
+
+        // Auto-resize the textarea
+        const textarea = document.getElementById('userInput');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    </script>
+</body>
+</html>
